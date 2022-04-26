@@ -1,0 +1,5 @@
+DeviceTvmSoftwareVulnerabilities
+| where isnotempty(RecommendedSecurityUpdateId)
+| extend MicrosoftKB = RecommendedSecurityUpdateId
+| order by MicrosoftKB asc 
+| project MicrosoftKB, RecommendedSecurityUpdate, OSPlatform, SoftwareName, SoftwareVersion, DeviceName, VulnerabilitySeverityLevel, CveId
