@@ -1,0 +1,11 @@
+//Active Devices
+let active =
+DeviceTvmSecureConfigurationAssessment
+| where ConfigurationId == "scid-2000"
+| distinct DeviceName;
+DeviceTvmSoftwareVulnerabilities
+| where isnotempty(RecommendedSecurityUpdateId)
+| distinct DeviceName, OSPlatform, OSVersion, SoftwareName, RecommendedSecurityUpdate, RecommendedSecurityUpdateId //VulnerabilitySeverityLevel (dont add this)
+| where OSPlatform != @"Linux" //tweak if need be or remove
+| where SoftwareName startswith @"windows_server" //tweak if need be or remove
+//| count
