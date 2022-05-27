@@ -1,0 +1,3 @@
+AlertInfo 
+| where isnotempty(Title)
+| where DetectionSource == @"Custom detection"
