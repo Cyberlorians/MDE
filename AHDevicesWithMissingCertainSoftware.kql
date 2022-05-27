@@ -1,0 +1,4 @@
+DeviceTvmSoftwareInventory
+| summarize software=make_set(SoftwareVendor) by DeviceName 
+| where software !has "videolan" //set software you are looking for
+| distinct DeviceName
