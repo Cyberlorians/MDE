@@ -1,0 +1,1 @@
+https://api-us.securitycenter.windows.com/api/machineactions?$filter=type eq 'unisolate'
