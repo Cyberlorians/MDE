@@ -1,0 +1,12 @@
+//devices
+let devicelist = (DeviceInfo);
+//software Inventory
+let softwareinv = (DeviceTvmSoftwareInventory);
+softwareinv | join kind=inner devicelist on DeviceName
+//Filter out an OS or add == to filter for specific OS if needed
+| where OSPlatform != @"Windows11" //example OS
+| where OSPlatform != @"WindowsServer2019" //example OS
+//Software to search for
+| where SoftwareName != @"Monitoring Agent" //Example software. Change to == to find specific software.
+| summarize software=make_set(SoftwareVendor) by Timestamp, DeviceName, OSPlatform, ReportId
+|summarize (Timestamp, ReportId)=arg_max(Timestamp, ReportId, OSPlatform), count() by DeviceName
