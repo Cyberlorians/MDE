@@ -10,7 +10,7 @@
 $alertid = Get-MgSecurityAlert | where-object {$_.AssignedTo -eq 'Automation'}
 
 #   Filter on FileStates to look for specific files such as PowerShell scripts
-#$alertid = Get-MgSecurityAlert | where-object {$_.FileStates -contains 'FAAdoingSomething.ps1' -or 'mimikatz_trunk.zip'}
+#$alertid = Get-MgSecurityAlert | where-object {$_.FileStates -contains 'test.ps1' -or 'test.zip'}
 
 #   Filter on Alert Title
 #$alertid = Get-MgSecurityAlert | where-object {$_.Title -contains 'Suspicious service launched'}
@@ -19,7 +19,7 @@ $alertid = Get-MgSecurityAlert | where-object {$_.AssignedTo -eq 'Automation'}
 #$alertid = Get-MgSecurityAlert | where-object {$_.Severity -eq 'medium'}
 
 #   Filter on AlertID
-#$alertid = Get-MgSecurityAlert | where-object {$_.Id -eq 'da637751047134609903_-1317628283'}
+#$alertid = Get-MgSecurityAlert | where-object {$_.Id -eq 'xxxxxxxx134609903_-1317628283'}
 
 #alert status options: newAlert, resolved
 
