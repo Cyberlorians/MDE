@@ -1,5 +1,5 @@
 let softwareinv = DeviceTvmSoftwareInventory
-| where SoftwareName == @".net_framework";
+| where SoftwareName == @".net_framework"; //put your third party AV software here
 let avmodetable = DeviceTvmSecureConfigurationAssessment
 | where ConfigurationId == "scid-2010" and isnotnull(Context)
 | extend avdata=parsejson(Context)
