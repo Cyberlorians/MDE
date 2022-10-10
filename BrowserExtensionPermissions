@@ -1,0 +1,5 @@
+DeviceTvmBrowserExtensions
+| join DeviceTvmBrowserExtensionsKB
+on $left. ExtensionId == $right. ExtensionId
+| where PermissionDescription has "" //blank to catch all, can be changed to target specific permissions.
+| distinct ExtensionId, ExtensionDescription, PermissionName, PermissionDescription, PermissionRisk
