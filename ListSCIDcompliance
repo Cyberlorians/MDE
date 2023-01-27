@@ -1,0 +1,8 @@
+DeviceTvmSecureConfigurationAssessment
+| project DeviceName, ConfigurationId, OSPlatform, Timestamp, IsApplicable, IsCompliant
+| join kind=leftouter (
+DeviceTvmSecureConfigurationAssessmentKB
+| project ConfigurationId, ConfigurationName, ConfigurationDescription, RiskDescription, ConfigurationImpact
+) on ConfigurationId
+| where ConfigurationId in ("scid-****")  /SCID Number
+| where IsCompliant == "0"  //Or 1  
