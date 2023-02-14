@@ -1,0 +1,16 @@
+let FirstMachineGroup = DeviceInfo
+| where Timestamp > ago(6h) //Timeframe for first control query to have initial device group result
+| where MachineGroup == "T0" //adjust device group name as needed
+| extend FirstDetectedGroup = MachineGroup
+| extend DetectedMachine1 = DeviceName
+| project DetectedMachine1, FirstDetectedGroup, DeviceName, DeviceId, ReportId, Timestamp;
+let ChangedMachineGroup = DeviceInfo
+| where Timestamp > ago(70m) //timeframe to look for device group change to coincide with CDR running and provide some overlap
+| where MachineGroup !has "T0" //adjust device group name as needed
+| extend SecondDetectedGroup = MachineGroup
+| extend DetectedMachine2 = DeviceName
+| project DetectedMachine2, SecondDetectedGroup, DeviceName, DeviceId, ReportId, Timestamp;
+FirstMachineGroup
+| join kind=inner ChangedMachineGroup on DeviceName
+| where FirstDetectedGroup != SecondDetectedGroup
+| summarize by DeviceName, FirstDetectedGroup, SecondDetectedGroup, DeviceId, ReportId, Timestamp //These last 3 columns added for custom detection rule creation
