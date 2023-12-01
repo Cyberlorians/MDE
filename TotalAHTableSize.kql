@@ -1,0 +1,9 @@
+// All Tables
+union withsource = TableName *, DeviceEvents, DeviceFileCertificateInfo, DeviceFileEvents, DeviceImageLoadEvents, DeviceInfo, DeviceLogonEvents, DeviceNetworkEvents, DeviceNetworkInfo, DeviceProcessEvents, DeviceRegistryEvents
+| summarize totalTableEntries = count(), TableSizeInGB = sum(estimate_data_size(*))/1000/1000/1000., TableSizeInMB = sum(estimate_data_size(*))/1000/1000. by TableName
+| union (
+    union withsource = TableName *, DeviceEvents, DeviceFileCertificateInfo, DeviceFileEvents, DeviceImageLoadEvents, DeviceInfo, DeviceLogonEvents, DeviceNetworkEvents, DeviceNetworkInfo, DeviceProcessEvents, DeviceRegistryEvents
+    | summarize totalTableEntries = count(), TableSizeInGB = sum(estimate_data_size(*))/1000/1000/1000., TableSizeInMB = sum(estimate_data_size(*))/1000/1000.
+    | extend TableName = "All Tables - Total"
+)
+| sort by TableName asc
