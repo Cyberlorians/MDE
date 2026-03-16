@@ -33,11 +33,11 @@ param (
 # Your Entra App Registration Details
 $tenantId     = ""       # <-- Your Tenant ID
 $clientId     = ""       # <-- Your App (Client) ID  
-$clientSecret = ""  # <-- Your Client Secret
+$clientSecret = ""       # <-- Your Client Secret
 
 # Environment: "Commercial", "GCC", or "GCCHigh"
 # Leave blank to auto-detect based on your tenant
-$Environment = "GCCHigh"
+$Environment = ""
 
 #endregion ==================== END CONFIGURATION ====================
 
@@ -183,11 +183,11 @@ try {
     Write-Host "        [FAIL] $_" -ForegroundColor Red
 }
 
-# Get AV Health via Advanced Hunting
-Write-Host "  [4/4] Fetching AV health status..." -ForegroundColor Yellow
+# Get AV Health + Extended Device Info via Advanced Hunting
+Write-Host "  [4/4] Fetching AV health status + device info..." -ForegroundColor Yellow
 $healthData = @()
 try {
-    $query = "DeviceTvmInfoGathering | where Timestamp > ago(7d) | extend AF = parse_json(AdditionalFields) | extend AvScan = parse_json(tostring(AF.AvScanResults)) | extend _avMode = tostring(AF.AvMode), _avEngineVersion = tostring(AF.AvEngineVersion), _avEngineUpdateTime = tostring(AF.AvEngineUpdateTime), _avIsEngineUpToDate = coalesce(tostring(AF.AvIsEngineUpToDate), tostring(AF.AvIsEngineUptoDate), tostring(AF.AvIsEngineUptodate)), _avSignatureVersion = tostring(AF.AvSignatureVersion), _avSignatureUpdateTime = tostring(AF.AvSignatureUpdateTime), _avIsSignatureUpToDate = coalesce(tostring(AF.AvIsSignatureUpToDate), tostring(AF.AvIsSignatureUptoDate), tostring(AF.AvIsSignatureUptodate)), _avPlatformVersion = tostring(AF.AvPlatformVersion), _avPlatformUpdateTime = tostring(AF.AvPlatformUpdateTime), _avIsPlatformUpToDate = coalesce(tostring(AF.AvIsPlatformUpToDate), tostring(AF.AvIsPlatformUptoDate), tostring(AF.AvIsPlatformUptodate)), _quickScanTime = tostring(AvScan.Quick.Timestamp), _quickScanResult = tostring(AvScan.Quick.ScanStatus), _quickScanError = tostring(AvScan.Quick.ErrorCode), _fullScanTime = tostring(AvScan.Full.Timestamp), _fullScanResult = tostring(AvScan.Full.ScanStatus), _fullScanError = tostring(AvScan.Full.ErrorCode) | summarize arg_max(Timestamp, *) by DeviceId | project computerDnsName = DeviceName, lastSeenTime = LastSeenTime, avMode = _avMode, avEngineVersion = _avEngineVersion, avEngineUpdateTime = _avEngineUpdateTime, avIsEngineUpToDate = _avIsEngineUpToDate, avSignatureVersion = _avSignatureVersion, avSignatureUpdateTime = _avSignatureUpdateTime, avIsSignatureUpToDate = _avIsSignatureUpToDate, avPlatformVersion = _avPlatformVersion, avPlatformUpdateTime = _avPlatformUpdateTime, avIsPlatformUpToDate = _avIsPlatformUpToDate, quickScanTime = _quickScanTime, quickScanResult = _quickScanResult, quickScanError = _quickScanError, fullScanTime = _fullScanTime, fullScanResult = _fullScanResult, fullScanError = _fullScanError"
+    $query = "let BootTimes = DeviceEvents | where Timestamp > ago(30d) | where InitiatingProcessId == 4 | summarize LastBootTime = max(InitiatingProcessCreationTime) by DeviceId; let DeviceDetails = DeviceInfo | where Timestamp > ago(30d) | summarize arg_max(Timestamp, *) by DeviceId | project DeviceId, Model, OSVersion, LoggedOnUsers, DeviceManualTags, DeviceDynamicTags; DeviceTvmInfoGathering | where Timestamp > ago(30d) | extend AF = parse_json(AdditionalFields) | extend AvScan = parse_json(tostring(AF.AvScanResults)) | extend _avMode = tostring(AF.AvMode), _avEngineVersion = tostring(AF.AvEngineVersion), _avEngineUpdateTime = tostring(AF.AvEngineUpdateTime), _avIsEngineUpToDate = coalesce(tostring(AF.AvIsEngineUpToDate), tostring(AF.AvIsEngineUptoDate), tostring(AF.AvIsEngineUptodate)), _avSignatureVersion = tostring(AF.AvSignatureVersion), _avSignatureUpdateTime = tostring(AF.AvSignatureUpdateTime), _avIsSignatureUpToDate = coalesce(tostring(AF.AvIsSignatureUpToDate), tostring(AF.AvIsSignatureUptoDate), tostring(AF.AvIsSignatureUptodate)), _avPlatformVersion = tostring(AF.AvPlatformVersion), _avPlatformUpdateTime = tostring(AF.AvPlatformUpdateTime), _avIsPlatformUpToDate = coalesce(tostring(AF.AvIsPlatformUpToDate), tostring(AF.AvIsPlatformUptoDate), tostring(AF.AvIsPlatformUptodate)), _quickScanTime = tostring(AvScan.Quick.Timestamp), _quickScanResult = tostring(AvScan.Quick.ScanStatus), _quickScanError = tostring(AvScan.Quick.ErrorCode), _fullScanTime = tostring(AvScan.Full.Timestamp), _fullScanResult = tostring(AvScan.Full.ScanStatus), _fullScanError = tostring(AvScan.Full.ErrorCode) | summarize arg_max(Timestamp, *) by DeviceId | join kind=leftouter DeviceDetails on DeviceId | join kind=leftouter BootTimes on DeviceId | project computerDnsName = DeviceName, model = Model, osVersion = OSVersion, loggedOnUsers = LoggedOnUsers, manualTags = DeviceManualTags, dynamicTags = DeviceDynamicTags, lastBootTime = LastBootTime, lastSeenTime = LastSeenTime, avMode = _avMode, avEngineVersion = _avEngineVersion, avEngineUpdateTime = _avEngineUpdateTime, avIsEngineUpToDate = _avIsEngineUpToDate, avSignatureVersion = _avSignatureVersion, avSignatureUpdateTime = _avSignatureUpdateTime, avIsSignatureUpToDate = _avIsSignatureUpToDate, avPlatformVersion = _avPlatformVersion, avPlatformUpdateTime = _avPlatformUpdateTime, avIsPlatformUpToDate = _avIsPlatformUpToDate, quickScanTime = _quickScanTime, quickScanResult = _quickScanResult, quickScanError = _quickScanError, fullScanTime = _fullScanTime, fullScanResult = _fullScanResult, fullScanError = _fullScanError"
     
     $huntingBody = @{ Query = $query }
     $healthResponse = Invoke-MdeApi -Uri "$($envSettings.BaseUri)/api/advancedqueries/run" -Token $token -Method "POST" -Body $huntingBody
@@ -319,12 +319,12 @@ $htmlDeviceTableEnd = '</tbody></table></div></div>'
 $htmlHealthTableStart = @'
 <div class="section">
 <div class="section-header">
-<h2>AV Health Status (All 18 Fields)</h2>
+<h2>AV Health Status + Extended Device Info</h2>
 <div class="search-box"><input type="text" placeholder="Search..." onkeyup="filterTable('healthTable', this.value)"></div>
 </div>
 <div class="table-wrapper">
 <table id="healthTable">
-<thead><tr><th>Device</th><th>Last Seen</th><th>AV Mode</th><th>Engine Ver</th><th>Eng Update</th><th>Eng OK</th><th>Sig Ver</th><th>Sig Update</th><th>Sig OK</th><th>Platform Ver</th><th>Plat Update</th><th>Plat OK</th><th>Quick Scan</th><th>Quick Result</th><th>Full Scan</th><th>Full Result</th></tr></thead>
+<thead><tr><th>Device</th><th>Model</th><th>OS Ver</th><th>Last User</th><th>Last Boot</th><th>Tags</th><th>AV Mode</th><th>Engine Ver</th><th>Eng OK</th><th>Sig Ver</th><th>Sig OK</th><th>Platform Ver</th><th>Plat OK</th><th>Quick Scan</th><th>Full Scan</th></tr></thead>
 <tbody>
 '@
 
@@ -339,15 +339,18 @@ foreach ($h in $healthData) {
     $engOkText = if ($h.avIsEngineUpToDate) { $h.avIsEngineUpToDate } else { "-" }
     $sigOkText = if ($h.avIsSignatureUpToDate) { $h.avIsSignatureUpToDate } else { "-" }
     $platOkText = if ($h.avIsPlatformUpToDate) { $h.avIsPlatformUpToDate } else { "-" }
-    $lastSeen = if ($h.lastSeenTime) { try { ([datetime]$h.lastSeenTime).ToString("yyyy-MM-dd HH:mm") } catch { "-" } } else { "-" }
-    $engUpdate = if ($h.avEngineUpdateTime) { try { ([datetime]$h.avEngineUpdateTime).ToString("MM-dd HH:mm") } catch { "-" } } else { "-" }
-    $sigUpdate = if ($h.avSignatureUpdateTime) { try { ([datetime]$h.avSignatureUpdateTime).ToString("MM-dd HH:mm") } catch { "-" } } else { "-" }
-    $platUpdate = if ($h.avPlatformUpdateTime) { try { ([datetime]$h.avPlatformUpdateTime).ToString("MM-dd HH:mm") } catch { "-" } } else { "-" }
     $quickTime = if ($h.quickScanTime) { try { ([datetime]$h.quickScanTime).ToString("MM-dd HH:mm") } catch { "-" } } else { "-" }
     $fullTime = if ($h.fullScanTime) { try { ([datetime]$h.fullScanTime).ToString("MM-dd HH:mm") } catch { "-" } } else { "-" }
-    $quickRes = if ($h.quickScanResult) { $h.quickScanResult } else { "-" }
-    $fullRes = if ($h.fullScanResult) { $h.fullScanResult } else { "-" }
-    $healthRows += "<tr><td class='device-name'>$($h.computerDnsName)</td><td class='timestamp'>$lastSeen</td><td><span class='badge $avModeClass'>$avModeName</span></td><td><span class='version'>$($h.avEngineVersion)</span></td><td class='timestamp'>$engUpdate</td><td><span class='badge $engOk'>$engOkText</span></td><td><span class='version'>$($h.avSignatureVersion)</span></td><td class='timestamp'>$sigUpdate</td><td><span class='badge $sigOk'>$sigOkText</span></td><td><span class='version'>$($h.avPlatformVersion)</span></td><td class='timestamp'>$platUpdate</td><td><span class='badge $platOk'>$platOkText</span></td><td class='timestamp'>$quickTime</td><td>$quickRes</td><td class='timestamp'>$fullTime</td><td>$fullRes</td></tr>`n"
+    # New fields
+    $model = if ($h.model) { $h.model } else { "-" }
+    $osVer = if ($h.osVersion) { $h.osVersion } else { "-" }
+    $lastUser = if ($h.loggedOnUsers) { try { $parsed = $h.loggedOnUsers | ConvertFrom-Json; if ($parsed) { ($parsed | Select-Object -First 1).UserName } else { "-" } } catch { $h.loggedOnUsers.Substring(0, [Math]::Min(20, $h.loggedOnUsers.Length)) } } else { "-" }
+    $bootTime = if ($h.lastBootTime) { try { ([datetime]$h.lastBootTime).ToString("yyyy-MM-dd HH:mm") } catch { "-" } } else { "-" }
+    $allTags = @()
+    if ($h.manualTags) { $allTags += $h.manualTags }
+    if ($h.dynamicTags) { $allTags += $h.dynamicTags }
+    $tags = if ($allTags.Count -gt 0) { $allTags -join ", " } else { "-" }
+    $healthRows += "<tr><td class='device-name'>$($h.computerDnsName)</td><td>$model</td><td>$osVer</td><td>$lastUser</td><td class='timestamp'>$bootTime</td><td>$tags</td><td><span class='badge $avModeClass'>$avModeName</span></td><td><span class='version'>$($h.avEngineVersion)</span></td><td><span class='badge $engOk'>$engOkText</span></td><td><span class='version'>$($h.avSignatureVersion)</span></td><td><span class='badge $sigOk'>$sigOkText</span></td><td><span class='version'>$($h.avPlatformVersion)</span></td><td><span class='badge $platOk'>$platOkText</span></td><td class='timestamp'>$quickTime</td><td class='timestamp'>$fullTime</td></tr>`n"
 }
 
 $htmlEnd = @'
